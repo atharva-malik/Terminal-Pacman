@@ -14,6 +14,7 @@ while True:
         break
     clear()
     print(board)
+    print(board.blinky.pos)
     if keyboard.is_pressed("w"):
         board.pac.n_direction = 2
         keyboard.press_and_release("backspace")
