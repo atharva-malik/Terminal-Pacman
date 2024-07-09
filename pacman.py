@@ -2,7 +2,7 @@ import copy
 
 blinky = ["Β", "β"]
 pinky = ["Φ", "φ"]
-Inky = ["Ν", "ν"] # The greek letter Iota looked too much like the map which is why I had to use Nu
+inky = ["Ν", "ν"] # The greek letter Iota looked too much like the map which is why I had to use Nu
 clyde = ["$", "€"] # Lore: Clyde is different from everyone else that's his symbol is special 
 class Board:
     def __init__(self):
@@ -19,11 +19,11 @@ class Board:
             ["*", "*", "*", "*", "*", "*", "*", "|", "|", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "|", "|", "*", "*", "*", "*", "*", "*", "*"],
             ["-", "-", "-", "*", "|", "-", "-", "|", "|", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "|", "|", "-", "-", "|", "*", "-", "-", "-"],
             [" ", " ", "|", "*", "|", "-", "-", "-", "|", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "|", "-", "-", "-", "|", "*", "|", " ", " "],
-            [" ", " ", "|", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "|", " ", " "],
+            [" ", " ", "|", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "b", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "|", " ", " "],
             [" ", " ", "|", "*", "-", "-", "*", "-", "-", "*", "|", "-", "-", " ", " ", "-", "-", "|", "*", "-", "-", "*", "-", "-", "*", "|", " ", " "],
             ["-", "-", "-", "*", "|", "|", "*", "|", "|", "*", "|", " ", " ", " ", " ", " ", " ", "|", "*", "|", "|", "*", "|", "|", "*", "-", "-", "-"],
             ["|", "*", "*", "*", "|", "|", "*", "|", "|", "*", "|", " ", " ", " ", " ", " ", " ", "|", "*", "|", "|", "*", "|", "|", "*", "*", "*", "|"],
-            ["|", "*", "|", "-", "-", "|", "*", "|", "|", "*", "|", " ", " ", " ", " ", " ", " ", "|", "*", "|", "|", "*", "|", "-", "-", "|", "*", "|"],
+            ["|", "*", "|", "-", "-", "|", "*", "|", "|", "*", "|", " ", "P", "I", "C", " ", " ", "|", "*", "|", "|", "*", "|", "-", "-", "|", "*", "|"],
             ["|", "*", "|", "-", "-", "|", "*", "-", "-", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "-", "-", "*", "|", "-", "-", "|", "*", "|"],
             ["|", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "|"],
             ["-", "-", "-", "*", "-", "-", "*", "-", "-", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "-", "-", "*", "-", "-", "*", "-", "-", "-"],
@@ -43,6 +43,11 @@ class Board:
         self.actual_map = copy.deepcopy(self.pacman_map)
         self.score = 0
         self.pac = PacMan()
+        self.blinky = Blinky()
+        # self.pinky = Pinky()
+        # self.inky = Inky()
+        # self.clyde = Clyde()
+        self.ghosts = [self.blinky] #, self.pinky, self.inky, self.clyde]
         self.spawn()
     
     def check_for_win(self):
@@ -59,6 +64,15 @@ class Board:
                     self.pac.pos = [i, j]
                     self.actual_map[i][j] = self.pac.pacman[self.pac.direction]
                     break
+        for i in range(len(self.actual_map)):
+            for j in range(len(self.actual_map[i])):
+                if self.actual_map[i][j] == "B":
+                    self.blinky.pos = [i, j]
+                    self.actual_map[i][j] = self.blinky.blinky[0]
+                    break
+    
+    def ghost_move(self):
+        pass
     
     def move(self):
         #! TODO: UPDATE SCORE!
@@ -70,21 +84,17 @@ class Board:
                 self.pac.direction = 3
             elif self.pacman_map[position[0]][position[1] + 1] not in walls:
                 self.pac.direction = 3
-                # self.pac.n_direction = -1
         elif n_direction == 4:
             if position[1] == 0:
                 self.pac.direction = 4
             elif self.pacman_map[position[0]][position[1] - 1] not in walls:
                 self.pac.direction = 4
-                # self.pac.n_direction = -1
         elif n_direction == 1:
             if self.pacman_map[position[0] + 1][position[1]] not in walls:
                 self.pac.direction = 1
-                # self.pac.n_direction = -1
         else:
             if self.pacman_map[position[0] - 1][position[1]] not in walls:
                 self.pac.direction = 2
-                # self.pac.n_direction = -1
         
         direction = self.pac.direction
         
@@ -130,6 +140,9 @@ class Board:
     def update(self):
         # Move pacman
         self.move()
+        for ghost in self.ghosts:
+            # Move ghosts
+            ghost.get_movement(self.actual_map, self.pac.pos)
         if self.check_for_win():
             return True
     
@@ -149,3 +162,35 @@ class PacMan:
         self.direction = 0 # The index of the appropriate sprite in the pacman list
         self.n_direction = -1 # The next direction
         self.pos = []
+
+
+class Blinky:
+    def __init__(self):
+        self.blinky = ["Β", "β"]
+        # self.target_pos = [] # The next position
+        self.pos = []
+        self.state = 1 # 0 = scatter, 1 = chase, 2 = frightened, 3 = eaten
+        self.directions = ["D", "U", "R", "L"]
+        self.facing = 2 # The index of the direction it can't turn to
+    
+    def get_movement(self, actual_map, target_pos):
+        m = copy.deepcopy(actual_map)
+        valid_directions = []
+        for i in range(len(self.directions)):
+            if i != self.facing:
+                if i == 3:
+                    if self.pos[1] == 30:
+                        self.pac.direction = 3
+                    elif self.pacman_map[position[0]][position[1] + 1] not in walls:
+                        self.pac.direction = 3
+                elif i == 4:
+                    if position[1] == 0:
+                        self.pac.direction = 4
+                    elif self.pacman_map[position[0]][position[1] - 1] not in walls:
+                        self.pac.direction = 4
+                elif i == 1:
+                    if self.pacman_map[position[0] + 1][position[1]] not in walls:
+                        self.pac.direction = 1
+                else:
+                    if self.pacman_map[position[0] - 1][position[1]] not in walls:
+                        self.pac.direction = 2
