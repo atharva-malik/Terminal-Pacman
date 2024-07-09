@@ -11,9 +11,10 @@ def clear():
 board = Board()
 while True:
     win = board.update()
+    # print(board.pacman_map[8][30])
     if win == True:
         break
-    elif win == False:
+    elif win == "LOSS":
         break
     clear()
     print(board)
@@ -29,4 +30,4 @@ while True:
     if keyboard.is_pressed("d"):
         board.pac.n_direction = 3
         keyboard.press_and_release("backspace")
-    time.sleep(0.1)
+    time.sleep(1/30)

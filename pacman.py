@@ -7,6 +7,7 @@ clyde = ["$", "€"] # Lore: Clyde is different from everyone else that's his sy
 class Board:
     def __init__(self):
         self.map_size = (31, 28)
+        self.frames = 0
         self.pacman_map = [
             ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
             ["|", "*", "*", "*", "*", "*", "*", "*", "*", "*", "|", "|", "*", "*", "*", "*", "|", "|", "*", "*", "*", "*", "*", "*", "*", "*", "*", "|"],
@@ -23,7 +24,7 @@ class Board:
             [" ", " ", "|", "*", "-", "-", "*", "-", "-", "*", "|", "-", "-", " ", " ", "-", "-", "|", "*", "-", "-", "*", "-", "-", "*", "|", " ", " "],
             ["-", "-", "-", "*", "|", "|", "*", "|", "|", "*", "|", " ", " ", " ", " ", " ", " ", "|", "*", "|", "|", "*", "|", "|", "*", "-", "-", "-"],
             ["|", "*", "*", "*", "|", "|", "*", "|", "|", "*", "|", " ", " ", " ", " ", " ", " ", "|", "*", "|", "|", "*", "|", "|", "*", "*", "*", "|"],
-            ["|", "*", "|", "-", "-", "|", "*", "|", "|", "*", "|", " ", "P", "I", "C", " ", " ", "|", "*", "|", "|", "*", "|", "-", "-", "|", "*", "|"],
+            ["|", "*", "|", "-", "-", "|", "*", "|", "|", "*", "|", " ", "N", "I", "C", " ", " ", "|", "*", "|", "|", "*", "|", "-", "-", "|", "*", "|"],
             ["|", "*", "|", "-", "-", "|", "*", "-", "-", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "-", "-", "*", "|", "-", "-", "|", "*", "|"],
             ["|", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "|"],
             ["-", "-", "-", "*", "-", "-", "*", "-", "-", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "-", "-", "*", "-", "-", "*", "-", "-", "-"],
@@ -51,10 +52,13 @@ class Board:
         self.spawn()
     
     def check_for_win(self):
+        flag = False
         for i in self.actual_map:
             for j in i:
                 if j in ["0", "ᗣ", "ᗢ", "ᗧ", "ᗤ"]:
-                    return "LOSS"
+                    flag = True
+        if flag == False:
+            return "LOSS"
         for i in self.actual_map:
             for j in i:
                 if j == "*" or j == "O":
@@ -74,44 +78,6 @@ class Board:
                     self.blinky.pos = [i, j]
                     self.actual_map[i][j] = " "
                     break
-    
-    # def ghost_move(self, ghost, direction):
-    #     walls = ["|", "-", " "]
-    #     position = ghost.pos
-    #     if ghost.is_eaten:
-    #         ghost_eaten_move()
-    #         return
-    #     if direction == "R":
-    #         # Travelling right
-    #         if position[1] == self.map_size[1]-1:
-    #             ghost.pos[1] = 0
-    #             self.actual_map[position[0]][position[1]] = " "
-    #             self.actual_map[position[0]][0] = ghost.sprite[0]
-    #         else:
-    #             ghost.pos[1] += 1
-    #             self.actual_map[position[0]][position[1]] = " "
-    #             self.actual_map[position[0]][position[1] + 1] = ghost.sprite[0]
-    #     elif direction == "L":
-    #         # Travelling left
-    #         if position[1] == 0:
-    #             ghost.pos[1] = self.map_size[1]-1
-    #             self.actual_map[position[0]][position[1]] = " "
-    #             self.actual_map[position[0]][(self.map_size[1]-1)] = ghost.sprite[0]
-    #         else:
-    #             ghost.pos[1] -= 1
-    #             self.actual_map[position[0]][position[1]] = " "
-    #             self.actual_map[position[0]][position[1] - 1] = ghost.sprite[0]
-    #     # Travelling up or down
-    #     elif direction == "D":
-    #         # Travelling down
-    #         ghost.pos[0] += 1
-    #         self.actual_map[position[0]][position[1]] = " "
-    #         self.actual_map[position[0] + 1][position[1]] = ghost.sprite[0]
-    #     elif direction == "U":
-    #         # Travelling up
-    #         ghost.pos[0] -= 1
-    #         self.actual_map[position[0]][position[1]] = " "
-    #         self.actual_map[position[0] - 1][position[1]] = ghost.sprite[0]
     
     def ghost_move(self, ghost, info):
         if ghost.is_eaten:
@@ -188,14 +154,18 @@ class Board:
     
     def update(self):
         # Move pacman
-        self.move()
+        self.frames += 1
+        if self.frames % 2 == 0:
+            self.move()
         for ghost in self.ghosts:
             # Move ghosts
-            self.ghost_move(ghost, ghost.get_movement(self.actual_map, self.pac.pos))
-        if self.check_for_win() == True:
+            if self.frames % 2 == 0:
+                self.ghost_move(ghost, ghost.get_movement(self.pacman_map, self.pac.pos))
+        win = self.check_for_win()
+        if win == True:
             return True
-        if self.check_for_win() == "LOSS":
-            return False
+        elif win == "LOSS":
+            return "LOSS"
     
     def __str__(self):
         # Print the map
@@ -246,7 +216,7 @@ class Blinky:
         for i in range(len(self.directions)):
             if i != self.facing:
                 if i == 2:
-                    if self.pos[1] == 30:
+                    if self.pos[1] == 27:
                         valid_directions.append("R")
                         tilePos.append([self.pos[0], 0])
                     elif m[position[0]][position[1] + 1] not in walls:
@@ -255,7 +225,7 @@ class Blinky:
                 elif i == 3:
                     if self.pos[1] == 0:
                         valid_directions.append("L")
-                        tilePos.append([self.pos[0], 30])
+                        tilePos.append([self.pos[0], 27])
                     elif m[position[0]][position[1] - 1] not in walls:
                         valid_directions.append("L")
                         tilePos.append([self.pos[0], position[1] - 1])
