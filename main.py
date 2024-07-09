@@ -10,11 +10,13 @@ def clear():
 
 board = Board()
 while True:
-    if board.update():
+    win = board.update()
+    if win == True:
+        break
+    elif win == False:
         break
     clear()
     print(board)
-    print(board.blinky.pos)
     if keyboard.is_pressed("w"):
         board.pac.n_direction = 2
         keyboard.press_and_release("backspace")
