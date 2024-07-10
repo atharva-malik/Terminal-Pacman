@@ -46,9 +46,9 @@ class Board:
         self.pac = PacMan()
         self.blinky = Blinky()
         self.pinky = Pinky()
-        # self.inky = Inky()
+        self.inky = Inky()
         # self.clyde = Clyde()
-        self.ghosts = [self.blinky, self.pinky] #, self.pinky, self.inky, self.clyde]
+        self.ghosts = [self.blinky, self.pinky, self.inky] #, self.clyde]
         self.ghost_can_start = [True, False, False, False]
         self.spawn()
     
@@ -85,6 +85,12 @@ class Board:
                     self.pinky.pos = copy.deepcopy(self.blinky.pos)
                     self.actual_map[i][j] = " "
                     break
+        for i in range(len(self.actual_map)):
+            for j in range(len(self.actual_map[i])):
+                if self.actual_map[i][j] == "I":
+                    self.inky.pos = copy.deepcopy(self.blinky.pos)
+                    self.actual_map[i][j] = " "
+                    break
     
     def ghost_move(self, ghost, info):
         if ghost.is_eaten:
@@ -101,14 +107,22 @@ class Board:
     def calculate_pinky_target(self, dist=4):
         pos = self.pac.pos
         direction = self.pac.direction
-        if direction == 1: # Travelling down
+        if direction <= 1: # Travelling down
             return [pos[0] + dist, pos[1]]
         elif direction == 2: # Travelling up
             return [pos[0] - dist, pos[1]]
         elif direction == 3: # Travelling right
             return [pos[0], pos[1] + dist]
-        elif direction == dist: # Travelling left
+        elif direction == 4: # Travelling left
             return [pos[0], pos[1] - dist]
+    
+    def calculate_inky_target(self):
+        offset = self.calculate_pinky_target(2)
+        pacPos = self.pac.pos
+        blinky = self.blinky.pos
+        flipped_vector = [offset[0] - pacPos[0], offset[1] - pacPos[1]]
+        flipped_vector[0] *= -1; flipped_vector[1] *= -1;
+        return [pacPos[0] + flipped_vector[0], pacPos[1] + flipped_vector[1]]
     
     def move(self):
         #! TODO: UPDATE SCORE!
@@ -178,12 +192,13 @@ class Board:
             self.move()
         for ghost in self.ghosts:
             # Move ghosts
-            if self.frames % 3 == 0:
+            if self.frames % 10 == 0:
                 if ghost == self.blinky:
                     self.ghost_move(ghost, ghost.get_movement(self.pacman_map, self.pac.pos))
                 elif ghost == self.pinky and self.ghost_can_start[1] == True:
                     self.ghost_move(ghost, ghost.get_movement(self.pacman_map, self.calculate_pinky_target()))
-                # elif ghoost ==
+                elif ghost == self.inky and self.ghost_can_start[2] == True:
+                    self.ghost_move(ghost, ghost.get_movement(self.pacman_map, self.calculate_inky_target()))
         win = self.check_for_win()
         if win == True:
             return True
@@ -350,7 +365,7 @@ class Pinky:
 
 class Inky:
     def __init__(self):
-        self.sprite = ["Φ", "φ"]
+        self.sprite = ["Ν", "ν"]
         # self.target_pos = [] # The next position
         self.pos = [0,0]
         self.state = 1 # 0 = scatter, 1 = chase, 2 = frightened, 3 = eaten
@@ -413,6 +428,7 @@ class Inky:
                 self.update_facing(valid_directions[i])
                 info[1] = tilePos[i]
         return info
+
 
 if __name__ == "__main__":
     import main
