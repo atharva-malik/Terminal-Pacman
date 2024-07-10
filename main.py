@@ -31,3 +31,6 @@ while True:
         board.pac.n_direction = 3
         keyboard.press_and_release("backspace")
     time.sleep(1/30)
+
+clear()
+print(board)

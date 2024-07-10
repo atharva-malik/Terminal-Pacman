@@ -24,7 +24,7 @@ class Board:
             [" ", " ", "|", "*", "-", "-", "*", "-", "-", "*", "|", "-", "-", " ", " ", "-", "-", "|", "*", "-", "-", "*", "-", "-", "*", "|", " ", " "],
             ["-", "-", "-", "*", "|", "|", "*", "|", "|", "*", "|", " ", " ", " ", " ", " ", " ", "|", "*", "|", "|", "*", "|", "|", "*", "-", "-", "-"],
             ["|", "*", "*", "*", "|", "|", "*", "|", "|", "*", "|", " ", " ", " ", " ", " ", " ", "|", "*", "|", "|", "*", "|", "|", "*", "*", "*", "|"],
-            ["|", "*", "|", "-", "-", "|", "*", "|", "|", "*", "|", " ", "N", "I", "C", " ", " ", "|", "*", "|", "|", "*", "|", "-", "-", "|", "*", "|"],
+            ["|", "*", "|", "-", "-", "|", "*", "|", "|", "*", "|", " ", "P", "I", "C", " ", " ", "|", "*", "|", "|", "*", "|", "-", "-", "|", "*", "|"],
             ["|", "*", "|", "-", "-", "|", "*", "-", "-", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "-", "-", "*", "|", "-", "-", "|", "*", "|"],
             ["|", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "|"],
             ["-", "-", "-", "*", "-", "-", "*", "-", "-", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "-", "-", "*", "-", "-", "*", "-", "-", "-"],
@@ -32,7 +32,7 @@ class Board:
             [" ", " ", "|", "*", "|", "|", "*", "|", "|", "*", "*", "*", "*", "|", "|", "*", "*", "*", "*", "|", "|", "*", "|", "|", "*", "|", " ", " "],
             [" ", " ", "|", "*", "|", "|", "*", "|", "-", "-", "-", "|", "*", "|", "|", "*", "|", "-", "-", "-", "|", "*", "|", "|", "*", "|", " ", " "],
             ["-", "-", "-", "*", "|", "|", "*", "|", "-", "-", "-", "|", "*", "-", "-", "*", "|", "-", "-", "-", "|", "*", "|", "|", "*", "-", "-", "-"],
-            ["|", "*", "*", "*", "|", "|", "*", "*", "*", "*", "*", "*", "*", "P", "*", "*", "*", "*", "*", "*", "*", "*", "|", "|", "*", "*", "*", "|"],
+            ["|", "*", "*", "*", "|", "|", "*", "*", "*", "*", "*", "*", "*", "0", "*", "*", "*", "*", "*", "*", "*", "*", "|", "|", "*", "*", "*", "|"],
             ["|", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "|", "-", "-", "-", "-", "|", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "|"],
             ["|", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "|", "-", "-", "-", "-", "|", "*", "|", "-", "-", "-", "-", "-", "-", "|", "*", "|"],
             ["|", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "|", "|", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "|"],
@@ -45,10 +45,11 @@ class Board:
         self.score = 0
         self.pac = PacMan()
         self.blinky = Blinky()
-        # self.pinky = Pinky()
+        self.pinky = Pinky()
         # self.inky = Inky()
         # self.clyde = Clyde()
-        self.ghosts = [self.blinky] #, self.pinky, self.inky, self.clyde]
+        self.ghosts = [self.blinky, self.pinky] #, self.pinky, self.inky, self.clyde]
+        self.ghost_can_start = [True, False, False, False]
         self.spawn()
     
     def check_for_win(self):
@@ -68,7 +69,7 @@ class Board:
     def spawn(self):
         for i in range(len(self.actual_map)):
             for j in range(len(self.actual_map[i])):
-                if self.actual_map[i][j] == "P":
+                if self.actual_map[i][j] == "0":
                     self.pac.pos = [i, j]
                     self.actual_map[i][j] = self.pac.pacman[self.pac.direction]
                     break
@@ -78,6 +79,12 @@ class Board:
                     self.blinky.pos = [i, j]
                     self.actual_map[i][j] = " "
                     break
+        for i in range(len(self.actual_map)):
+            for j in range(len(self.actual_map[i])):
+                if self.actual_map[i][j] == "P":
+                    self.pinky.pos = copy.deepcopy(self.blinky.pos)
+                    self.actual_map[i][j] = " "
+                    break
     
     def ghost_move(self, ghost, info):
         if ghost.is_eaten:
@@ -85,9 +92,23 @@ class Board:
             return
         c_position = info[0]
         t_position = info[1]
-        self.actual_map[c_position[0]][c_position[1]] = " "
-        ghost.pos = t_position
+        self.actual_map[c_position[0]][c_position[1]] = ghost.last_pos_tile
+        ghost.pos = copy.deepcopy(t_position)
+        if self.actual_map[ghost.pos[0]][ghost.pos[1]] not in ["Β", "β", "Φ", "φ", "Ν", "ν", "$", "€"]:
+            ghost.last_pos_tile = self.actual_map[ghost.pos[0]][ghost.pos[1]]
         self.actual_map[t_position[0]][t_position[1]] = ghost.sprite[0]
+    
+    def calculate_pinky_target(self, dist=4):
+        pos = self.pac.pos
+        direction = self.pac.direction
+        if direction == 1: # Travelling down
+            return [pos[0] + dist, pos[1]]
+        elif direction == 2: # Travelling up
+            return [pos[0] - dist, pos[1]]
+        elif direction == 3: # Travelling right
+            return [pos[0], pos[1] + dist]
+        elif direction == dist: # Travelling left
+            return [pos[0], pos[1] - dist]
     
     def move(self):
         #! TODO: UPDATE SCORE!
@@ -113,59 +134,67 @@ class Board:
         
         direction = self.pac.direction
         
-        if direction > 2:
-            # Travelling left or right
-            if direction == 3:
-                # Travelling right
-                if position[1] == self.map_size[1]-1:
-                    self.pac.pos[1] = 0
+        # Travelling left or right
+        if direction == 3:
+            # Travelling right
+            if position[1] == self.map_size[1]-1:
+                self.pac.pos[1] = 0
+                self.actual_map[position[0]][position[1]] = " "
+                self.actual_map[position[0]][0] = self.pac.pacman[3]
+            else:
+                if self.pacman_map[position[0]][position[1] + 1] not in walls:
+                    self.pac.pos[1] += 1
                     self.actual_map[position[0]][position[1]] = " "
-                    self.actual_map[position[0]][0] = self.pac.pacman[3]
-                else:
-                    if self.pacman_map[position[0]][position[1] + 1] not in walls:
-                        self.pac.pos[1] += 1
-                        self.actual_map[position[0]][position[1]] = " "
-                        self.actual_map[position[0]][position[1] + 1] = self.pac.pacman[3]
-            elif direction == 4:
-                # Travelling left
-                if position[1] == 0:
-                    self.pac.pos[1] = self.map_size[1]-1
+                    self.actual_map[position[0]][position[1] + 1] = self.pac.pacman[3]
+        elif direction == 4:
+            # Travelling left
+            if position[1] == 0:
+                self.pac.pos[1] = self.map_size[1]-1
+                self.actual_map[position[0]][position[1]] = " "
+                self.actual_map[position[0]][(self.map_size[1]-1)] = self.pac.pacman[3]
+            else:
+                if self.pacman_map[position[0]][position[1] - 1] not in walls:
+                    self.pac.pos[1] -= 1
                     self.actual_map[position[0]][position[1]] = " "
-                    self.actual_map[position[0]][(self.map_size[1]-1)] = self.pac.pacman[3]
-                else:
-                    if self.pacman_map[position[0]][position[1] - 1] not in walls:
-                        self.pac.pos[1] -= 1
-                        self.actual_map[position[0]][position[1]] = " "
-                        self.actual_map[position[0]][position[1] - 1] = self.pac.pacman[4]
-        elif direction <= 2 and direction > 0:
-            # Travelling up or down
-            if direction == 1:
-                # Travelling down
-                if self.pacman_map[position[0] + 1][position[1]] not in walls:
-                    self.pac.pos[0] += 1
-                    self.actual_map[position[0]][position[1]] = " "
-                    self.actual_map[position[0] + 1][position[1]] = self.pac.pacman[1]
-            elif direction == 2:
-                # Travelling up
-                if self.pacman_map[position[0] - 1][position[1]] not in walls:
-                    self.pac.pos[0] -= 1
-                    self.actual_map[position[0]][position[1]] = " "
-                    self.actual_map[position[0] - 1][position[1]] = self.pac.pacman[2]
+                    self.actual_map[position[0]][position[1] - 1] = self.pac.pacman[4]
+        # Travelling up or down
+        elif direction == 1:
+            # Travelling down
+            if self.pacman_map[position[0] + 1][position[1]] not in walls:
+                self.pac.pos[0] += 1
+                self.actual_map[position[0]][position[1]] = " "
+                self.actual_map[position[0] + 1][position[1]] = self.pac.pacman[1]
+        elif direction == 2:
+            # Travelling up
+            if self.pacman_map[position[0] - 1][position[1]] not in walls:
+                self.pac.pos[0] -= 1
+                self.actual_map[position[0]][position[1]] = " "
+                self.actual_map[position[0] - 1][position[1]] = self.pac.pacman[2]
     
     def update(self):
         # Move pacman
         self.frames += 1
-        if self.frames % 2 == 0:
+        if self.frames % 3 == 0:
             self.move()
         for ghost in self.ghosts:
             # Move ghosts
-            if self.frames % 2 == 0:
-                self.ghost_move(ghost, ghost.get_movement(self.pacman_map, self.pac.pos))
+            if self.frames % 3 == 0:
+                if ghost == self.blinky:
+                    self.ghost_move(ghost, ghost.get_movement(self.pacman_map, self.pac.pos))
+                elif ghost == self.pinky and self.ghost_can_start[1] == True:
+                    self.ghost_move(ghost, ghost.get_movement(self.pacman_map, self.calculate_pinky_target()))
+                # elif ghoost ==
         win = self.check_for_win()
         if win == True:
             return True
         elif win == "LOSS":
             return "LOSS"
+        if self.frames == 30:
+            self.ghost_can_start[1] = True
+        elif self.frames == 90:
+            self.ghost_can_start[2] = True
+        elif self.frames == 180:
+            self.ghost_can_start[3] = True
     
     def __str__(self):
         # Print the map
@@ -194,6 +223,7 @@ class Blinky:
         self.is_eaten = False
         self.directions = ["D", "U", "R", "L"]
         self.facing = 0 # The index of the direction it can't turn to
+        self.last_pos_tile = "*"
     
     def update_facing(self, direction):
         if direction == "D":
@@ -212,7 +242,7 @@ class Blinky:
         tilePos = []
         valid_directions = []
         info = [self.pos, []]
-        min_distance = 9999999999999999999999999999999999999
+        min_distance = 999999
         for i in range(len(self.directions)):
             if i != self.facing:
                 if i == 2:
@@ -250,6 +280,139 @@ class Blinky:
                 info[1] = tilePos[i]
         return info
 
+
+class Pinky:
+    def __init__(self):
+        self.sprite = ["Φ", "φ"]
+        # self.target_pos = [] # The next position
+        self.pos = [0,0]
+        self.state = 1 # 0 = scatter, 1 = chase, 2 = frightened, 3 = eaten
+        self.is_eaten = False
+        self.directions = ["D", "U", "R", "L"]
+        self.facing = 0 # The index of the direction it can't turn to
+        self.last_pos_tile = " "
+    
+    def update_facing(self, direction):
+        if direction == "D":
+            self.facing = 1
+        elif direction == "U":
+            self.facing = 0
+        elif direction == "R":
+            self.facing = 3
+        elif direction == "L":
+            self.facing = 2
+    
+    def get_movement(self, actual_map, target_pos):
+        m = copy.deepcopy(actual_map)
+        walls = ["|", "-", " "]
+        position = self.pos
+        tilePos = []
+        valid_directions = []
+        info = [self.pos, []]
+        min_distance = 999999
+        for i in range(len(self.directions)):
+            if i != self.facing:
+                if i == 2:
+                    if self.pos[1] == 27:
+                        valid_directions.append("R")
+                        tilePos.append([self.pos[0], 0])
+                    elif m[position[0]][position[1] + 1] not in walls:
+                        valid_directions.append("R")
+                        tilePos.append([position[0], (position[1] + 1)])   
+                elif i == 3:
+                    if self.pos[1] == 0:
+                        valid_directions.append("L")
+                        tilePos.append([self.pos[0], 27])
+                    elif m[position[0]][position[1] - 1] not in walls:
+                        valid_directions.append("L")
+                        tilePos.append([self.pos[0], position[1] - 1])
+                elif i == 1:
+                    if m[position[0] + 1][position[1]] not in walls:
+                        valid_directions.append("U")
+                        tilePos.append([position[0] + 1, position[1]])
+                else:
+                    if m[position[0] - 1][position[1]] not in walls:
+                        valid_directions.append("D")
+                        tilePos.append([position[0] - 1, position[1]])
+        if len(tilePos) == 1:
+            info[1] = tilePos[0]
+            self.update_facing(valid_directions[0])
+            return info
+        for i in range(len(tilePos)):
+            distance = (tilePos[i][0] - target_pos[0])**2 + (tilePos[i][1] - target_pos[1])**2
+            distance = distance**0.5
+            if distance < min_distance:
+                min_distance = distance
+                self.update_facing(valid_directions[i])
+                info[1] = tilePos[i]
+        return info
+
+
+class Inky:
+    def __init__(self):
+        self.sprite = ["Φ", "φ"]
+        # self.target_pos = [] # The next position
+        self.pos = [0,0]
+        self.state = 1 # 0 = scatter, 1 = chase, 2 = frightened, 3 = eaten
+        self.is_eaten = False
+        self.directions = ["D", "U", "R", "L"]
+        self.facing = 0 # The index of the direction it can't turn to
+        self.last_pos_tile = " "
+    
+    def update_facing(self, direction):
+        if direction == "D":
+            self.facing = 1
+        elif direction == "U":
+            self.facing = 0
+        elif direction == "R":
+            self.facing = 3
+        elif direction == "L":
+            self.facing = 2
+    
+    def get_movement(self, actual_map, target_pos):
+        m = copy.deepcopy(actual_map)
+        walls = ["|", "-", " "]
+        position = self.pos
+        tilePos = []
+        valid_directions = []
+        info = [self.pos, []]
+        min_distance = 999999
+        for i in range(len(self.directions)):
+            if i != self.facing:
+                if i == 2:
+                    if self.pos[1] == 27:
+                        valid_directions.append("R")
+                        tilePos.append([self.pos[0], 0])
+                    elif m[position[0]][position[1] + 1] not in walls:
+                        valid_directions.append("R")
+                        tilePos.append([position[0], (position[1] + 1)])   
+                elif i == 3:
+                    if self.pos[1] == 0:
+                        valid_directions.append("L")
+                        tilePos.append([self.pos[0], 27])
+                    elif m[position[0]][position[1] - 1] not in walls:
+                        valid_directions.append("L")
+                        tilePos.append([self.pos[0], position[1] - 1])
+                elif i == 1:
+                    if m[position[0] + 1][position[1]] not in walls:
+                        valid_directions.append("U")
+                        tilePos.append([position[0] + 1, position[1]])
+                else:
+                    if m[position[0] - 1][position[1]] not in walls:
+                        valid_directions.append("D")
+                        tilePos.append([position[0] - 1, position[1]])
+        if len(tilePos) == 1:
+            info[1] = tilePos[0]
+            self.update_facing(valid_directions[0])
+            return info
+        for i in range(len(tilePos)):
+            distance = (tilePos[i][0] - target_pos[0])**2 + (tilePos[i][1] - target_pos[1])**2
+            distance = distance**0.5
+            if distance < min_distance:
+                min_distance = distance
+                self.update_facing(valid_directions[i])
+                info[1] = tilePos[i]
+        return info
 
 if __name__ == "__main__":
     import main
