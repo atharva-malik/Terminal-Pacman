@@ -11,7 +11,6 @@ def clear():
 board = Board()
 while True:
     win = board.update()
-    # print(board.pacman_map[8][30])
     if win == True:
         break
     elif win == "LOSS":

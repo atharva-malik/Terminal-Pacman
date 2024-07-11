@@ -3,7 +3,7 @@ import copy
 blinky = ["Β", "β"]
 pinky = ["Φ", "φ"]
 inky = ["Ν", "ν"] # The greek letter Iota looked too much like the map which is why I had to use Nu
-clyde = ["$", "€"] # Lore: Clyde is different from everyone else that's his symbol is special 
+clyde = ["$", "€"] # Lore: Clyde is different from everyone else that's why his symbol is special 
 class Board:
     def __init__(self):
         self.map_size = (31, 28)
@@ -47,10 +47,16 @@ class Board:
         self.blinky = Blinky()
         self.pinky = Pinky()
         self.inky = Inky()
-        # self.clyde = Clyde()
-        self.ghosts = [self.blinky, self.pinky, self.inky] #, self.clyde]
+        self.clyde = Clyde()
+        self.ghosts = [self.blinky, self.pinky, self.inky, self.clyde]
         self.ghost_can_start = [True, False, False, False]
         self.spawn()
+        self.ghosts_set_state(0)
+    
+    def ghosts_set_state(self, state):
+        # 0 = scatter, 1 = chase, 2 = frightened, 3 = eaten
+        for ghost in self.ghosts:
+            ghost.state = state
     
     def check_for_win(self):
         flag = False
@@ -66,31 +72,43 @@ class Board:
                     return False
         return True
     
+    def switch_states(self):
+        # As it was in OG Pacman
+        if self.frames < 30*7:
+            self.ghosts_set_state(0)
+        elif self.frames < 30*7+30*20:
+            self.ghosts_set_state(1)
+        elif self.frames < 30*7+30*20+30*7:
+            self.ghosts_set_state(0)
+        elif self.frames < 30*7+30*20+30*7+30*20:
+            self.ghosts_set_state(1)
+        elif self.frames < 30*7+30*20+30*7+30*20+30*5:
+            self.ghosts_set_state(0)
+        elif self.frames < 30*7+30*20+30*7+30*20+30*5+30*20:
+            self.ghosts_set_state(1)
+        elif self.frames < 30*7+30*20+30*7+30*20+30*5+30*20+30*5:
+            self.ghosts_set_state(0)
+        else:
+            self.ghosts_set_state(1)
+    
     def spawn(self):
-        for i in range(len(self.actual_map)):
-            for j in range(len(self.actual_map[i])):
-                if self.actual_map[i][j] == "0":
-                    self.pac.pos = [i, j]
-                    self.actual_map[i][j] = self.pac.pacman[self.pac.direction]
-                    break
-        for i in range(len(self.actual_map)):
-            for j in range(len(self.actual_map[i])):
-                if self.actual_map[i][j] == "B":
-                    self.blinky.pos = [i, j]
-                    self.actual_map[i][j] = " "
-                    break
-        for i in range(len(self.actual_map)):
-            for j in range(len(self.actual_map[i])):
-                if self.actual_map[i][j] == "P":
-                    self.pinky.pos = copy.deepcopy(self.blinky.pos)
-                    self.actual_map[i][j] = " "
-                    break
         for i in range(len(self.actual_map)):
             for j in range(len(self.actual_map[i])):
                 if self.actual_map[i][j] == "I":
                     self.inky.pos = copy.deepcopy(self.blinky.pos)
                     self.actual_map[i][j] = " "
-                    break
+                elif self.actual_map[i][j] == "P":
+                    self.pinky.pos = copy.deepcopy(self.blinky.pos)
+                    self.actual_map[i][j] = " "
+                elif self.actual_map[i][j] == "B":
+                    self.blinky.pos = [i, j]
+                    self.actual_map[i][j] = " "
+                elif self.actual_map[i][j] == "0":
+                    self.pac.pos = [i, j]
+                    self.actual_map[i][j] = self.pac.pacman[self.pac.direction]
+                elif self.actual_map[i][j] == "C":
+                    self.clyde.pos = copy.deepcopy(self.blinky.pos)
+                    self.actual_map[i][j] = " "
     
     def ghost_move(self, ghost, info):
         if ghost.is_eaten:
@@ -188,17 +206,20 @@ class Board:
     def update(self):
         # Move pacman
         self.frames += 1
+        self.switch_states()
         if self.frames % 3 == 0:
             self.move()
         for ghost in self.ghosts:
             # Move ghosts
-            if self.frames % 10 == 0:
+            if self.frames % 3 == 0:
                 if ghost == self.blinky:
                     self.ghost_move(ghost, ghost.get_movement(self.pacman_map, self.pac.pos))
                 elif ghost == self.pinky and self.ghost_can_start[1] == True:
                     self.ghost_move(ghost, ghost.get_movement(self.pacman_map, self.calculate_pinky_target()))
                 elif ghost == self.inky and self.ghost_can_start[2] == True:
                     self.ghost_move(ghost, ghost.get_movement(self.pacman_map, self.calculate_inky_target()))
+                elif ghost == self.clyde and self.ghost_can_start[3] == True:
+                    self.ghost_move(ghost, ghost.get_movement(self.pacman_map, self.pac.pos))
         win = self.check_for_win()
         if win == True:
             return True
@@ -206,9 +227,9 @@ class Board:
             return "LOSS"
         if self.frames == 30:
             self.ghost_can_start[1] = True
-        elif self.frames == 90:
+        elif self.frames == 120:
             self.ghost_can_start[2] = True
-        elif self.frames == 180:
+        elif self.frames == 220:
             self.ghost_can_start[3] = True
     
     def __str__(self):
@@ -239,6 +260,7 @@ class Blinky:
         self.directions = ["D", "U", "R", "L"]
         self.facing = 0 # The index of the direction it can't turn to
         self.last_pos_tile = "*"
+        self.scatter_pos = [0, 31]
     
     def update_facing(self, direction):
         if direction == "D":
@@ -251,6 +273,8 @@ class Blinky:
             self.facing = 2
     
     def get_movement(self, actual_map, target_pos):
+        if self.state == 0:
+            target_pos = self.scatter_pos
         m = copy.deepcopy(actual_map)
         walls = ["|", "-", " "]
         position = self.pos
@@ -305,7 +329,8 @@ class Pinky:
         self.is_eaten = False
         self.directions = ["D", "U", "R", "L"]
         self.facing = 0 # The index of the direction it can't turn to
-        self.last_pos_tile = " "
+        self.last_pos_tile = "*"
+        self.scatter_pos = [0, 0]
     
     def update_facing(self, direction):
         if direction == "D":
@@ -318,6 +343,8 @@ class Pinky:
             self.facing = 2
     
     def get_movement(self, actual_map, target_pos):
+        if self.state == 0:
+            target_pos = self.scatter_pos
         m = copy.deepcopy(actual_map)
         walls = ["|", "-", " "]
         position = self.pos
@@ -372,7 +399,8 @@ class Inky:
         self.is_eaten = False
         self.directions = ["D", "U", "R", "L"]
         self.facing = 0 # The index of the direction it can't turn to
-        self.last_pos_tile = " "
+        self.last_pos_tile = "*"
+        self.scatter_pos = [31, 0]
     
     def update_facing(self, direction):
         if direction == "D":
@@ -385,6 +413,82 @@ class Inky:
             self.facing = 2
     
     def get_movement(self, actual_map, target_pos):
+        if self.state == 0:
+            target_pos = self.scatter_pos
+        m = copy.deepcopy(actual_map)
+        walls = ["|", "-", " "]
+        position = self.pos
+        tilePos = []
+        valid_directions = []
+        info = [self.pos, []]
+        min_distance = 999999
+        for i in range(len(self.directions)):
+            if i != self.facing:
+                if i == 2:
+                    if self.pos[1] == 27:
+                        valid_directions.append("R")
+                        tilePos.append([self.pos[0], 0])
+                    elif m[position[0]][position[1] + 1] not in walls:
+                        valid_directions.append("R")
+                        tilePos.append([position[0], (position[1] + 1)])   
+                elif i == 3:
+                    if self.pos[1] == 0:
+                        valid_directions.append("L")
+                        tilePos.append([self.pos[0], 27])
+                    elif m[position[0]][position[1] - 1] not in walls:
+                        valid_directions.append("L")
+                        tilePos.append([self.pos[0], position[1] - 1])
+                elif i == 1:
+                    if m[position[0] + 1][position[1]] not in walls:
+                        valid_directions.append("U")
+                        tilePos.append([position[0] + 1, position[1]])
+                else:
+                    if m[position[0] - 1][position[1]] not in walls:
+                        valid_directions.append("D")
+                        tilePos.append([position[0] - 1, position[1]])
+        if len(tilePos) == 1:
+            info[1] = tilePos[0]
+            self.update_facing(valid_directions[0])
+            return info
+        for i in range(len(tilePos)):
+            distance = (tilePos[i][0] - target_pos[0])**2 + (tilePos[i][1] - target_pos[1])**2
+            distance = distance**0.5
+            if distance < min_distance:
+                min_distance = distance
+                self.update_facing(valid_directions[i])
+                info[1] = tilePos[i]
+        return info
+
+
+class Clyde:
+    def __init__(self):
+        self.sprite = ["$", "€"]
+        # self.target_pos = [] # The next position
+        self.pos = [0,0]
+        self.state = 1 # 0 = scatter, 1 = chase, 2 = frightened, 3 = eaten
+        self.is_eaten = False
+        self.directions = ["D", "U", "R", "L"]
+        self.facing = 0 # The index of the direction it can't turn to
+        self.last_pos_tile = "*"
+        self.scatter_pos = [28, 31]
+    
+    def update_facing(self, direction):
+        if direction == "D":
+            self.facing = 1
+        elif direction == "U":
+            self.facing = 0
+        elif direction == "R":
+            self.facing = 3
+        elif direction == "L":
+            self.facing = 2
+    
+    def get_movement(self, actual_map, target_pos):
+        if self.state == 0:
+            target_pos = self.scatter_pos
+        distance = (self.pos[0] - target_pos[0])**2 + (self.pos[1] - target_pos[1])**2
+        distance = distance**0.5
+        if distance < 8:
+            target_pos = self.scatter_pos
         m = copy.deepcopy(actual_map)
         walls = ["|", "-", " "]
         position = self.pos
