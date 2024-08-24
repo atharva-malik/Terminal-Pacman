@@ -12,7 +12,7 @@ This game is a 100% accurate (based on the original Pac-Man Game) Pac-Man copy i
 This game is made with [Python 3.11.5] and uses only the [Keyboard] module for input. The game, other than the Keyboard module, is made entirely with either built-in modules or native Python.
 
 ## Installation/Execution
-To run the game, you must download and install [Python] 3+, install the [Keyboard] module with `pip install keyboard`, download the source code, and run the `main.py` file
+To run the game, you must download and install [Python 3+], install the [Keyboard] module with `pip install keyboard`, download the source code, and run the `main.py` file
 
 ## Controls
 The controls of this game are:
@@ -33,6 +33,6 @@ Want to contribute? Great! Pull requests and issues are welcome! [Here] is an ex
 [//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job.)
 
    [Python 3.11.5]: <https://www.python.org/downloads/release/python-3115/>
-   [Python]: <https://www.python.org/downloads/release/python-3115/>
+   [Python 3+]: <https://www.python.org/downloads/release/python-3115/>
    [Keyboard]: <https://pypi.org/project/keyboard/>
    [Here]: <https://www.dataschool.io/how-to-contribute-on-github/>
