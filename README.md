@@ -1,5 +1,9 @@
 # Terminal Pacman
 
+<p align="center">
+  <img src="https://cloud-m29qb3s8u-hack-club-bot.vercel.app/0image.png" />
+</p>
+
 This game is a 100% accurate (based on the original Pac-Man Game) Pac-Man copy in the terminal. It comes with all the main game states and all four ghosts, Blinky, Pinky, Inky and Clyde.
 
 ## Feature
